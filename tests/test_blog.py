@@ -21,6 +21,30 @@ def test_post(client):
     assert b'test body' in response.data
 
 
+def test_like_only_logged(client, auth):
+    response = client.get('/post/1')
+    assert b'fa-heart' not in response.data
+
+    auth.login()
+    logged_response = client.get('/post/1')
+    assert b'fa-heart' in logged_response.data
+
+
+def test_like_post(client, auth):
+    auth.login()
+
+    response = client.get('/post/1')
+    assert b'fa-regular fa-heart' in response.data
+
+    client.get('/like/1')
+    like_response = client.get('/post/1')
+    assert b'fa-solid fa-heart' in like_response.data
+
+    client.get('/like/1')
+    unlike_response = client.get('/post/1')
+    assert b'fa-regular fa-heart' in unlike_response.data
+
+
 @pytest.mark.parametrize('path', (
     '/create',
     '/1/update',
@@ -96,4 +120,3 @@ def test_delete(client, auth, app):
         db = get_db()
         post = db.execute('SELECT * FROM post WHERE id = 1').fetchone()
         assert post is None
-
