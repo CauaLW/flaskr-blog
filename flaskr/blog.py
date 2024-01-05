@@ -23,7 +23,46 @@ def index():
 def post(post_id):
     post = get_post(post_id, check_author=False)
 
-    return render_template('blog/post.html', post=post)
+    user_liked = None
+
+    if g.user is not None:
+        # Check if the user liked the post
+        user_liked = get_db().execute(
+            'SELECT * FROM user_like WHERE user_id = ? AND post_id = ?',
+            [g.user['id'], post['id']]
+        ).fetchone() is not None
+
+    return render_template('blog/post.html', post=post, user_liked=user_liked)
+
+
+@bp.route('/like/<int:post_id>')
+@login_required
+def like_post(post_id):
+    db = get_db()
+    post = get_post(post_id, check_author=False)
+
+    user_like = db.execute(
+        'SELECT * FROM user_like WHERE user_id = ? AND post_id = ?',
+        [g.user['id'], post['id']]
+    ).fetchone()
+    already_liked = user_like is not None
+
+    if already_liked:
+        # Remove the like
+        db.execute(
+            'DELETE FROM user_like WHERE user_id = ? AND post_id = ?',
+            [g.user['id'], post['id']]
+        )
+        db.commit()
+    else:
+        # Add the like
+        db.execute(
+            'INSERT INTO user_like (user_id, post_id) VALUES (?, ?)',
+            [g.user['id'], post['id']]
+        )
+        db.commit()
+
+    return redirect(url_for('blog.post', post_id=post_id))
 
 
 @bp.route('/create', methods=['GET', 'POST'])
