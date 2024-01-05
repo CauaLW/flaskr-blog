@@ -1,7 +1,5 @@
 # Flaskr Project
 
-![Flaskr Logo](<path_to_your_logo_or_icon>)
-
 ## Introduction
 
 Flaskr is a web application developed using the Flask framework, serving as a learning project following the official Flask tutorial. The project extends beyond the tutorial, incorporating additional functionalities for a more comprehensive understanding of Flask development.
