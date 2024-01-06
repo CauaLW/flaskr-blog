@@ -21,18 +21,54 @@ def index():
 
 @bp.route('/post/<int:post_id>')
 def post(post_id):
+    db = get_db()
     post = get_post(post_id, check_author=False)
 
     user_liked = None
 
     if g.user is not None:
         # Check if the user liked the post
-        user_liked = get_db().execute(
+        user_liked = db.execute(
             'SELECT * FROM user_like WHERE user_id = ? AND post_id = ?',
             [g.user['id'], post['id']]
         ).fetchone() is not None
 
-    return render_template('blog/post.html', post=post, user_liked=user_liked)
+    # Get post comments
+    comments = db.execute(
+        'SELECT c.*, username FROM comment c JOIN user u ON c.user_id = u.id WHERE post_id = ? ORDER BY created',
+        [post['id']]
+    ).fetchall()
+
+    return render_template('blog/post.html', post=post, user_liked=user_liked, comments=comments)
+
+
+@bp.route('/comment/<int:post_id>', methods=['POST'])
+@login_required
+def create_comment(post_id):
+    db = get_db()
+
+    db.execute(
+        'INSERT INTO comment (user_id, post_id, comment) VALUES (?, ?, ?)',
+        [g.user['id'], post_id, request.form['comment-body']]
+    )
+    db.commit()
+
+    return redirect(url_for('blog.post', post_id=post_id))
+
+
+@bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    db = get_db()
+    comment = get_comment(comment_id)
+
+    db.execute(
+        'DELETE FROM comment WHERE id = ?',
+        [comment['id']]
+    )
+    db.commit()
+
+    return redirect(url_for('blog.post', post_id=comment['post_id']))
 
 
 @bp.route('/like/<int:post_id>')
@@ -150,3 +186,18 @@ def get_post(post_id, check_author=True):
         abort(403)
 
     return post
+
+
+def get_comment(comment_id, check_author=True):
+    comment = get_db().execute(
+        'SELECT * FROM comment WHERE id = ?',
+        [comment_id]
+    ).fetchone()
+
+    if comment is None:
+        abort(404, f"Comment id {comment_id} doesn't exist")
+
+    if check_author and comment['user_id'] != g.user['id']:
+        abort(403)
+
+    return comment

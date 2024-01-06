@@ -19,6 +19,7 @@ def test_post(client):
     response = client.get('/post/1')
     assert b'test title' in response.data
     assert b'test body' in response.data
+    assert b'test comment' in response.data
 
 
 def test_like_only_logged(client, auth):
@@ -45,10 +46,33 @@ def test_like_post(client, auth):
     assert b'fa-regular fa-heart' in unlike_response.data
 
 
+def test_create_comment(auth, client):
+    auth.login()
+
+    client.post('/comment/1', data={
+        'comment-body': 'test_create_comment'
+    })
+
+    response = client.get('/post/1')
+    assert b'test_create_comment' in response.data
+
+
+def test_delete_comment(auth, client):
+    auth.login()
+
+    # Delete the comment
+    client.post('/comment/1/delete')
+
+    response = client.get('/post/1')
+    assert b'test comment' not in response.data
+
+
 @pytest.mark.parametrize('path', (
     '/create',
     '/1/update',
     '/1/delete',
+    '/comment/1',
+    '/comment/1/delete',
 ))
 def test_login_required(client, path):
     response = client.post(path)
@@ -73,6 +97,7 @@ def test_author_required(app, client, auth):
 @pytest.mark.parametrize('path', (
     '/2/update',
     '/2/delete',
+    '/comment/2/delete'
 ))
 def test_exists_required(client, auth, path):
     auth.login()
@@ -107,8 +132,12 @@ def test_update(client, auth, app):
 ))
 def test_create_update_validate(client, auth, path):
     auth.login()
-    response = client.post(path, data={'title': '', 'body': ''})
-    assert b'Title is required' in response.data
+
+    missing_title_response = client.post(path, data={'title': '', 'body': ''})
+    assert b'Title is required' in missing_title_response.data
+
+    missing_body_response = client.post(path, data={'title': 'title', 'body': ''})
+    assert b'Body is required' in missing_body_response.data
 
 
 def test_delete(client, auth, app):

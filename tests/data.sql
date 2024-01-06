@@ -6,3 +6,7 @@ VALUES
 INSERT INTO post (title, body, author_id, created)
 VALUES
   ('test title', 'test body', 1, '2018-01-01 00:00:00');
+
+INSERT INTO comment (post_id, user_id, comment)
+VALUES
+  (1, 1, 'test comment')

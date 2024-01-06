@@ -14,5 +14,32 @@
 {% block content %}
   <p>{{ post['body'] }}</p>
   <hr>
+  <h1>Comments:</h1>
+  {% for comment in comments %}
+    <div class="comment-box">
+      <div class="comment-header">
+        <span class="author">{{ comment['username'] }}:</span>
+        {% if g.user['id'] == comment['user_id'] %}
+          <form action="{{ url_for('blog.delete_comment', comment_id=comment['id']) }}" method="post">
+            <button style="background: transparent; border: 0; cursor: pointer;" type="submit" onclick="return confirm('Are you sure?')">
+              <i class="fa-solid fa-trash" style="color: #f66151;"></i>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+      <span>{{ comment['comment'] }}</span>
+      <span class="date">{{ comment['created'].strftime('%Y-%m-%d') }}</span>
+    </div>
+  {% if not loop.last %}
+    <hr>
+  {% endif %}
+  {% endfor %}
+  {% if g.user %}
+    <form action="{{ url_for('blog.create_comment', post_id = post['id']) }}" method="post" id="comment-form">
+      <label for="comment-body">Write a comment</label>
+      <textarea required minlength="5" name="comment-body" id="comment-body" rows="1"></textarea>
+      <input type="submit" value="Send comment">
+    </form>
+  {% endif %}
   <a href="{{ url_for('blog.index') }}">Back</a>
 {% endblock %}
