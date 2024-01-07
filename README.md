@@ -30,7 +30,7 @@ Flaskr is a web application developed using the Flask framework, serving as a le
 2. Navigate to the project directory:
 
    ```bash
-   cd flaskr-project
+   cd flaskr-blog
    ```
 
 3. Create a virtual environment (optional but recommended):
